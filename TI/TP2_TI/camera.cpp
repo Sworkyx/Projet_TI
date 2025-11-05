@@ -98,16 +98,14 @@ void Camera::play()
                 absdiff(m_frame,img_sans_v,img_v);
 				cv::cvtColor(img_v, img_v, cv::COLOR_BGR2GRAY);
 				inRange(img_v, cv::Scalar(60,60,60), cv::Scalar(255, 255, 255), img_v);
-                imshow("ihvuy",img_v);
+                
 
                 //on dilate l'image pour combler les trous puis on erode
-				cv::dilate(img_v, img_v, cv::Mat(), cv::Point(-1,-1),6);
-				cv::erode(img_v, img_v, cv::Mat(), cv::Point(-1,-1),6);
-                cv::Canny(img_v, img_v, 200, 200, 3);
-
+				cv::dilate(img_v, img_v, cv::Mat(), cv::Point(-1,-1),5);
+				cv::erode(img_v, img_v, cv::Mat(), cv::Point(-1,-1),5);
+				imshow("img_vehicule",img_v);
 
                 
-                imshow("img_vehicule",img_v);
 
 				for( size_t i = 0; i < lines.size(); i++ )
 					{
@@ -117,6 +115,34 @@ void Camera::play()
             }
 
             //on cherche a identifier détecter les véhicules et afficher un carré autour des véhicules détecter
+
+			std::vector<std::vector<cv::Point>> contours;
+			cv::findContours(img_v, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+			// Parcours chaque contour détecté
+			for (size_t i = 0; i < contours.size(); i++) {
+    			cv::Moments m = cv::moments(contours[i], false);
+    			if (m.m00 > 0) {
+        			int cX = static_cast<int>(m.m10 / m.m00);
+        			int cY = static_cast<int>(m.m01 / m.m00);
+
+        			// Dessine un cercle rouge et texte sur l'image originale (par exemple m_frame)
+        			cv::circle(m_frame, cv::Point(cX, cY), 5, cv::Scalar(0, 0, 255), -1);
+        			
+					// Calcul du rectangle englobant
+    				cv::Rect bbox = cv::boundingRect(contours[i]);
+
+    				// Filtre (optionnel) : ignore les petits objets parasites
+    				if (bbox.area() < 100) continue;
+
+    				// Dessine le rectangle sur l'image originale
+    				cv::rectangle(m_frame, bbox, cv::Scalar(0, 255, 0), 2);  // Vert, épaisseur 2 pixels
+
+    				// Ajoute un texte au-dessus du rectangle
+    				cv::putText(m_frame, "Voiture", cv::Point(bbox.x, bbox.y - 5),
+                				cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 1);
+    			}
+			}
 
             // Afficher la frame
             cv::imshow("Video", m_frame);
