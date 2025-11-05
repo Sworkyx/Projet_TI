@@ -63,7 +63,19 @@ void Camera::play()
     cv::Mat mask_b;
     cv::Mat img_sans_v,img_v;
     cv::Mat test;
+    cv::Mat voie_gauche,voie_droite;
 	std::vector<cv::Vec4i> lines;
+    int cpt_droite = 0;
+    int cpt_gauche = 0;
+    int prev_countnzero_droite = 0;
+    int prev_countnzero_gauche = 0;
+    Rect rect1(20, 100, 110, 2);
+    Rect rect2(550, 100, 230, 2);
+
+    int largeur = m_cap.get(cv::CAP_PROP_FRAME_WIDTH);
+    printf("Largeur: %d\n",largeur);
+    int hauteur = m_cap.get(cv::CAP_PROP_FRAME_HEIGHT);
+    printf("Hauteur: %d\n",hauteur);
 
     while (isReading)
     {
@@ -91,6 +103,7 @@ void Camera::play()
 
                 //on choisit une image sans véhicule pour permettre la détection
                 m_frame.copyTo(img_sans_v);
+                
 			}
 			// On dessine les lignes détectées à partir de la 4eme frame
 			if(frameCounter > 3)
@@ -98,15 +111,32 @@ void Camera::play()
                 absdiff(m_frame,img_sans_v,img_v);
 				cv::cvtColor(img_v, img_v, cv::COLOR_BGR2GRAY);
 				inRange(img_v, cv::Scalar(60,60,60), cv::Scalar(255, 255, 255), img_v);
-                
 
                 //on dilate l'image pour combler les trous puis on erode
-				cv::dilate(img_v, img_v, cv::Mat(), cv::Point(-1,-1),5);
-				cv::erode(img_v, img_v, cv::Mat(), cv::Point(-1,-1),5);
-				imshow("img_vehicule",img_v);
+				cv::dilate(img_v, img_v, cv::Mat(), cv::Point(-1,-1),6);
+				cv::erode(img_v, img_v, cv::Mat(), cv::Point(-1,-1),6);
+                cv::Canny(img_v, img_v, 200, 200, 3);
 
-                
+                //Compter les véhicules détectés dans chaque sens
+                //On choisit une portion d'image pour isoler les deux sens 
+                cv::rectangle(m_frame, cv::Point(20,100), cv::Point(230,102), cv::Scalar(255,255,255),2);
+                cv::rectangle(m_frame,cv::Point(550,100), cv::Point(780,102),cv::Scalar(255,255,255),2);
 
+                voie_droite = img_v(rect1);
+                voie_gauche = img_v(rect2);
+
+                if(cv::countNonZero(voie_droite) - prev_countnzero_droite > 10){
+                    cpt_droite++;
+                    printf("compteur droit = %d \n",cpt_droite);
+                }
+                if(cv::countNonZero(voie_gauche) - prev_countnzero_gauche > 10){  
+                    cpt_gauche++;
+                    printf("compteur droit = %d \n",cpt_gauche);
+                }
+
+                prev_countnzero_droite = cv::countNonZero(voie_droite);
+                prev_countnzero_gauche = cv::countNonZero(voie_gauche);
+            
 				for( size_t i = 0; i < lines.size(); i++ )
 					{
 						cv::line( m_frame, cv::Point(lines[i][0], lines[i][1]), cv::Point(lines[i][2], lines[i][3]), cv::Scalar(0,255,0), 3, cv::LINE_AA);
@@ -115,34 +145,6 @@ void Camera::play()
             }
 
             //on cherche a identifier détecter les véhicules et afficher un carré autour des véhicules détecter
-
-			std::vector<std::vector<cv::Point>> contours;
-			cv::findContours(img_v, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-			// Parcours chaque contour détecté
-			for (size_t i = 0; i < contours.size(); i++) {
-    			cv::Moments m = cv::moments(contours[i], false);
-    			if (m.m00 > 0) {
-        			int cX = static_cast<int>(m.m10 / m.m00);
-        			int cY = static_cast<int>(m.m01 / m.m00);
-
-        			// Dessine un cercle rouge et texte sur l'image originale (par exemple m_frame)
-        			cv::circle(m_frame, cv::Point(cX, cY), 5, cv::Scalar(0, 0, 255), -1);
-        			
-					// Calcul du rectangle englobant
-    				cv::Rect bbox = cv::boundingRect(contours[i]);
-
-    				// Filtre (optionnel) : ignore les petits objets parasites
-    				if (bbox.area() < 100) continue;
-
-    				// Dessine le rectangle sur l'image originale
-    				cv::rectangle(m_frame, bbox, cv::Scalar(0, 255, 0), 2);  // Vert, épaisseur 2 pixels
-
-    				// Ajoute un texte au-dessus du rectangle
-    				cv::putText(m_frame, "Voiture", cv::Point(bbox.x, bbox.y - 5),
-                				cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 1);
-    			}
-			}
 
             // Afficher la frame
             cv::imshow("Video", m_frame);
