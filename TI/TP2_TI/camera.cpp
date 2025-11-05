@@ -113,8 +113,8 @@ void Camera::play()
 				inRange(img_v, cv::Scalar(60,60,60), cv::Scalar(255, 255, 255), img_v);
 
                 //on dilate l'image pour combler les trous puis on erode
-				cv::dilate(img_v, img_v, cv::Mat(), cv::Point(-1,-1),6);
-				cv::erode(img_v, img_v, cv::Mat(), cv::Point(-1,-1),6);
+				cv::dilate(img_v, img_v, cv::Mat(), cv::Point(-1,-1),10);
+				cv::erode(img_v, img_v, cv::Mat(), cv::Point(-1,-1),10);
                 cv::Canny(img_v, img_v, 200, 200, 3);
 
                 //Compter les véhicules détectés dans chaque sens
@@ -122,16 +122,16 @@ void Camera::play()
                 cv::rectangle(m_frame, cv::Point(20,100), cv::Point(230,102), cv::Scalar(255,255,255),2);
                 cv::rectangle(m_frame,cv::Point(550,100), cv::Point(780,102),cv::Scalar(255,255,255),2);
 
-                voie_droite = img_v(rect1);
-                voie_gauche = img_v(rect2);
+                voie_gauche = img_v(rect1);
+                voie_droite = img_v(rect2);
 
                 if(cv::countNonZero(voie_droite) - prev_countnzero_droite > 10){
                     cpt_droite++;
                     printf("compteur droit = %d \n",cpt_droite);
                 }
-                if(cv::countNonZero(voie_gauche) - prev_countnzero_gauche > 10){  
+                if(cv::countNonZero(voie_gauche) - prev_countnzero_gauche > 5){  
                     cpt_gauche++;
-                    printf("compteur droit = %d \n",cpt_gauche);
+                    printf("compteur gauche = %d \n",cpt_gauche);
                 }
 
                 prev_countnzero_droite = cv::countNonZero(voie_droite);
