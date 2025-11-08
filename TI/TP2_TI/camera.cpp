@@ -69,8 +69,8 @@ void Camera::play()
     int cpt_gauche = 0;
     int prev_countnzero_droite = 0;
     int prev_countnzero_gauche = 0;
-    Rect rect1(20, 100, 110, 2);
-    Rect rect2(550, 100, 230, 2);
+    Rect rect1(10, 100, 250, 10);
+    Rect rect2(550, 100, 250, 10);
 
     int largeur = m_cap.get(cv::CAP_PROP_FRAME_WIDTH);
     printf("Largeur: %d\n",largeur);
@@ -113,23 +113,22 @@ void Camera::play()
 				inRange(img_v, cv::Scalar(60,60,60), cv::Scalar(255, 255, 255), img_v);
 
                 //on dilate l'image pour combler les trous puis on erode
-				cv::dilate(img_v, img_v, cv::Mat(), cv::Point(-1,-1),10);
-				cv::erode(img_v, img_v, cv::Mat(), cv::Point(-1,-1),10);
+				cv::dilate(img_v, img_v, cv::Mat(), cv::Point(-1,-1),5);
+				cv::erode(img_v, img_v, cv::Mat(), cv::Point(-1,-1),5);
                 cv::Canny(img_v, img_v, 200, 200, 3);
 
                 //Compter les véhicules détectés dans chaque sens
                 //On choisit une portion d'image pour isoler les deux sens 
-                cv::rectangle(m_frame, cv::Point(20,100), cv::Point(230,102), cv::Scalar(255,255,255),2);
-                cv::rectangle(m_frame,cv::Point(550,100), cv::Point(780,102),cv::Scalar(255,255,255),2);
+                
 
                 voie_gauche = img_v(rect1);
                 voie_droite = img_v(rect2);
 
-                if(cv::countNonZero(voie_droite) - prev_countnzero_droite > 10){
+                if(cv::countNonZero(voie_droite) - prev_countnzero_droite > 30){
                     cpt_droite++;
-                    printf("compteur droit = %d \n",cpt_droite);
+                    printf("compteur droite = %d \n",cpt_droite);
                 }
-                if(cv::countNonZero(voie_gauche) - prev_countnzero_gauche > 5){  
+                if(cv::countNonZero(voie_gauche) - prev_countnzero_gauche > 30){  
                     cpt_gauche++;
                     printf("compteur gauche = %d \n",cpt_gauche);
                 }
@@ -142,6 +141,9 @@ void Camera::play()
 						cv::line( m_frame, cv::Point(lines[i][0], lines[i][1]), cv::Point(lines[i][2], lines[i][3]), cv::Scalar(0,255,0), 3, cv::LINE_AA);
 				}
                 
+
+                cv::rectangle(m_frame, cv::Point(10,100), cv::Point(260,110), cv::Scalar(255,255,255),2);
+                cv::rectangle(m_frame,cv::Point(550,100), cv::Point(800,110),cv::Scalar(255,255,255),2);
             }
 
             //on cherche a identifier détecter les véhicules et afficher un carré autour des véhicules détecter
